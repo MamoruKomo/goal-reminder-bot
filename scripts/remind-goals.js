@@ -354,7 +354,7 @@ async function getThreadReplies(channelId, threadTs) {
     {
       channel: channelId,
       ts: threadTs,
-      limit: 200,
+      limit: 15,
     },
     "messages",
   );
