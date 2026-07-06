@@ -22,6 +22,9 @@ jobs:
       SLACK_CHANNEL_ID: C0AUQNCULMB
       MONDAY_MESSAGE_MARKER: 今週の目標をスレッドに投稿してください
       EXPECTED_REPLY_COUNT: "3"
+      NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      NOTION_DATA_SOURCE_ID: 39509a68-050b-80a0-966f-000ba6c187f4
+      NOTION_SYNC_JST_DAYS: "2"
       DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
     steps:
       - name: Checkout
