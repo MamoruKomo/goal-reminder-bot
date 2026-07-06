@@ -115,18 +115,41 @@ function isReportableReply(message) {
 
 async function slackApi(method, params = {}) {
   const token = requireEnv("SLACK_BOT_TOKEN");
-  const response = await fetch(`${SLACK_API_BASE_URL}/${method}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json; charset=utf-8",
-    },
-    body: JSON.stringify(params),
-  });
+  const cleanParams = Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null),
+  );
+  const url = new URL(`${SLACK_API_BASE_URL}/${method}`);
+  const request =
+    method === "conversations.replies"
+      ? {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      : {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json; charset=utf-8",
+          },
+          body: JSON.stringify(cleanParams),
+        };
+
+  if (request.method === "GET") {
+    for (const [key, value] of Object.entries(cleanParams)) {
+      url.searchParams.set(key, String(value));
+    }
+  }
+
+  const response = await fetch(url, request);
 
   const data = await response.json();
   if (!response.ok || !data.ok) {
-    const detail = data.error || `${response.status} ${response.statusText}`;
+    const responseMessages = data.response_metadata?.messages?.join("; ");
+    const detail = [data.error || `${response.status} ${response.statusText}`, responseMessages]
+      .filter(Boolean)
+      .join(" - ");
     throw new Error(`Slack API ${method} failed: ${detail}`);
   }
   return data;
@@ -354,7 +377,6 @@ async function getThreadReplies(channelId, threadTs) {
     {
       channel: channelId,
       ts: threadTs,
-      limit: 15,
     },
     "messages",
   );
